@@ -1,0 +1,13 @@
+<template>
+    <template if:true={hasData}>
+        <lightning-card title="Top Orders">
+            <template for:each={records.data} for:item="item">
+                <p key={item.Id}>{item.Name}</p>
+            </template>
+        </lightning-card>
+    </template>
+
+    <template if:false={hasData}>
+        <p>No orders data available.</p>
+    </template>
+</template>
