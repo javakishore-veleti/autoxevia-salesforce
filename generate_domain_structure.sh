@@ -2,7 +2,15 @@
 
 # ==========================================================
 # AutoXevia Enterprise Domain Architecture Generator
-# SAFE / AGILE VERSION (NO OBJECTS CREATED)
+# CORRECTED VERSION — NO APEX IN DOMAINS
+# Domain folders will contain ONLY:
+#  - lwc
+#  - api
+#  - services
+#  - utils
+#  - widgets
+#  - docs
+# Apex classes must live ONLY under /classes
 # ==========================================================
 
 ROOT="force-app/main/default"
@@ -19,6 +27,7 @@ DOMAINS=(
 echo ""
 echo "=============================================="
 echo " AutoXevia Domain Architecture Generator"
+echo " CORRECTED — Apex is NOT created under domains/"
 echo "=============================================="
 echo "Using project root: $ROOT"
 echo ""
@@ -30,44 +39,19 @@ for domain in "${DOMAINS[@]}"; do
     DOMAIN_PATH="$ROOT/domains/$domain"
     DOMAIN_CAPITALIZED="$(tr '[:lower:]' '[:upper:]' <<< ${domain:0:1})${domain:1}"
 
-    echo "→ Creating domain: $domain"
+    echo ""
+    echo "→ Creating domain structure for: $domain"
+    echo "  Path: $DOMAIN_PATH"
 
-    # Create base folders
+    # -------------------------------------------------------
+    # Create domain sub-folders (NO APEX here)
+    # -------------------------------------------------------
     mkdir -p "$DOMAIN_PATH/lwc"
     mkdir -p "$DOMAIN_PATH/services"
     mkdir -p "$DOMAIN_PATH/api"
-    mkdir -p "$DOMAIN_PATH/apex"
     mkdir -p "$DOMAIN_PATH/utils"
     mkdir -p "$DOMAIN_PATH/widgets"
-
-    # -------------------------------------------------------
-    # Create Apex boilerplate (DAO + Service)
-    # -------------------------------------------------------
-    APX="$DOMAIN_PATH/apex"
-
-    if [ ! -f "$APX/${DOMAIN_CAPITALIZED}DAO.cls" ]; then
-    cat <<EOF > "$APX/${DOMAIN_CAPITALIZED}DAO.cls"
-public with sharing class ${DOMAIN_CAPITALIZED}DAO {
-    // TODO: Add SOQL queries for domain: $domain
-    public static List<SObject> getRecords() {
-        return new List<SObject>();
-    }
-}
-EOF
-    fi
-
-    if [ ! -f "$APX/${DOMAIN_CAPITALIZED}Service.cls" ]; then
-    cat <<EOF > "$APX/${DOMAIN_CAPITALIZED}Service.cls"
-public with sharing class ${DOMAIN_CAPITALIZED}Service {
-    // TODO: Add business logic for domain: $domain
-
-    @AuraEnabled(cacheable=true)
-    public static List<SObject> fetchData() {
-        return ${DOMAIN_CAPITALIZED}DAO.getRecords();
-    }
-}
-EOF
-    fi
+    mkdir -p "$DOMAIN_PATH/docs"
 
     # -------------------------------------------------------
     # Create JS API layer
@@ -76,8 +60,10 @@ EOF
 
     if [ ! -f "$API_PATH/${domain}Api.js" ]; then
     cat <<EOF > "$API_PATH/${domain}Api.js"
+// API layer for $domain domain
+// Use this to call Apex or external services
+
 export async function fetch${DOMAIN_CAPITALIZED}Data() {
-    // TODO: Call Apex or REST API for $domain
     console.log("Calling ${domain}Api...");
     return [];
 }
@@ -93,8 +79,9 @@ EOF
     cat <<EOF > "$SERVICES_PATH/${domain}Service.js"
 import { fetch${DOMAIN_CAPITALIZED}Data } from '../api/${domain}Api.js';
 
+// Business logic layer for $domain domain
+
 export async function get${DOMAIN_CAPITALIZED}Data() {
-    // Wrap API + apply logic
     return await fetch${DOMAIN_CAPITALIZED}Data();
 }
 EOF
@@ -107,31 +94,26 @@ EOF
 
     if [ ! -f "$UTILS_PATH/${domain}Utils.js" ]; then
     cat <<EOF > "$UTILS_PATH/${domain}Utils.js"
+// Shared utilities for $domain domain
+
 export const ${domain}Constants = {
     MODULE: "$domain"
 };
-
-// TODO: add shared domain utilities
 EOF
     fi
 
     # -------------------------------------------------------
-    # Create sample LWC (top widget)
+    # Create Sample LWC Component
     # -------------------------------------------------------
     LWC_PATH="$DOMAIN_PATH/lwc/top${DOMAIN_CAPITALIZED}"
     mkdir -p "$LWC_PATH"
 
     if [ ! -f "$LWC_PATH/top${DOMAIN_CAPITALIZED}.js" ]; then
     cat <<EOF > "$LWC_PATH/top${DOMAIN_CAPITALIZED}.js"
-import { LightningElement, wire } from 'lwc';
-import fetchData from '@salesforce/apex/${DOMAIN_CAPITALIZED}Service.fetchData';
+import { LightningElement } from 'lwc';
 
 export default class Top${DOMAIN_CAPITALIZED} extends LightningElement {
-    @wire(fetchData) records;
-
-    get hasData() {
-        return this.records?.data?.length > 0;
-    }
+    // Placeholder LWC. Replace with real logic.
 }
 EOF
     fi
@@ -139,17 +121,9 @@ EOF
     if [ ! -f "$LWC_PATH/top${DOMAIN_CAPITALIZED}.html" ]; then
     cat <<EOF > "$LWC_PATH/top${DOMAIN_CAPITALIZED}.html"
 <template>
-    <template if:true={hasData}>
-        <lightning-card title="Top ${DOMAIN_CAPITALIZED}">
-            <template for:each={records.data} for:item="item">
-                <p key={item.Id}>{item.Name}</p>
-            </template>
-        </lightning-card>
-    </template>
-
-    <template if:false={hasData}>
-        <p>No ${domain} data available.</p>
-    </template>
+    <lightning-card title="Top ${DOMAIN_CAPITALIZED}">
+        <p class="slds-p-around_medium">No data loaded yet.</p>
+    </lightning-card>
 </template>
 EOF
     fi
@@ -173,3 +147,4 @@ echo ""
 echo "=============================================="
 echo " AutoXevia domain architecture generation DONE"
 echo "=============================================="
+echo ""
